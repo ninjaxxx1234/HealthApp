@@ -7,9 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/iiti_logo.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff",
+      "imageResizeMode": "cover" 
     },
     "assetBundlePatterns": [
       "**/*"

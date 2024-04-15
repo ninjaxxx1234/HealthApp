@@ -1,7 +1,7 @@
 import { View, Text, SafeAreaView, Image, TouchableOpacity, ScrollView } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../components/'
-import React, { useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
   LineChart,
   BarChart,
@@ -144,46 +144,91 @@ let SP_DATA = {}
 
 const filePath = "../components/sample_data.txt";
 
+const fetchData = () => {
+  fetch("http://10.14.3.73:5000/data")
+    .then(response => response.json())
+    .then(data => {
+      const { labels, data: responseData } = data;
+      // Assuming setLabels and setData are functions to update state or variables
+      setLabels(labels);
+      setData(responseData);
+    })
+    .catch(error => {
+      // Handle error if any
+      console.error('Error fetching data:', error);
+    });
+};
 
 const Home = () => {
+  const intervalRef = useRef(null);
   const [graphData, setGraphData] = useState(HR_DATA);
-  const [graphName, setGraphName] = useState("Overall Wellbeing")
+  const [graphName, setGraphName] = useState("RR")
   const [SAMPLE_DATA, setSAMPLE_DATA] = useState(null);
+  const [labels, setLabels] = useState(["0", "2", "4", "6", "8", "10", "12", "14", "16"]);
+  const [data, setData] = useState([
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100,
+    Math.random() * 100
+  ]);
+  const [graphArr, setGraphArray] = useState({
+    "SP": [21],
+    "RR": [21],
+    "FiO2": [21],
+    "PEEP": [21],
+    "PIP": [21],
+    "VTe": [21],
+    "TF": [5],
+    "Tinsp": [1.2],
+    "timestamp": [0]
+  })
+  const fetchData = () => {
+    fetch("http://10.14.1.140:5000/data")
+      .then(response => response.json())
+      .then(data => {
+        const { timestamp, RR, FIO2, PEEP, PIP, SP, VTe, Tinsp, TF } = data; // Fixed: changed RR to responseData
+        // Assuming setLabels and setData are functions to update state or variables
+        setLabels(timestamp);
+        setGraphArray({
+            "SP": SP,
+            "RR": RR,
+            "FiO2": FIO2,
+            "PEEP": PEEP,
+            "PIP": PIP,
+            "VTe": VTe,
+            "timestamp": timestamp,
+            "Tinsp": Tinsp,
+            "TF": TF
+          });
+      })
+      .catch(error => {
+        // Handle error if any
+        console.error('Error fetching data:', error);
+      });
+  };
+  
   
   const handleCardPress = (title) => {
-
-    if (title === 'SP') {
-      setGraphData(SP_DATA);
-      setGraphName(title)
-    } else if (title === 'FiO2') {
-      setGraphData(Fi02_DATA);
-      setGraphName(title);
-    } else if (title === 'PIP') {
-      setGraphData(PIP_DATA);
-      setGraphName(title);
-    } else if (title === 'VTe') {
-      setGraphData(VTe_DATA);
-      setGraphName(title);
-    } else if (title === 'RR') {
-      setGraphData(RR_DATA);
-      setGraphName(title);
-    } else if (title === 'Tinsp') {
-      setGraphData(Tinsp_DATA);
-      setGraphName(title);
-    } else if (title === 'PEEP') {
-      setGraphData(PEEP_DATA);
-      setGraphName(title);
-    } else if (title === 'HR') {
-      setGraphData(HR_DATA);
-      setGraphName(title);
-    }
-
-
+    setGraphName(title);
   };
+  
+  useEffect(() => {
+    fetchData();
+    intervalRef.current = setInterval(fetchData, 3000);
+    return () => {
+      clearInterval(intervalRef.current);
+    };
+  }, []) 
+
+  
   return (
 
     <View className="w-full h-full flex-row bg-red-400">
-
       <View className=" relative flex-col items-center justify-center px-7 bg-white w-1/12">
         <View className=" absolute top-0 pt-14">
           <Image
@@ -224,20 +269,16 @@ const Home = () => {
       </View>
       {/* Body of the Home Page*/}
       <LinearGradient
-
         className="w-full flex-row flex"
         colors={['#3F72AF', '#90ACCD']}
         start={{ x: 0, y: 0 }} // Left
         end={{ x: 1, y: 0 }}
       >
         <View className="flex-col w-2/3 z-10">
-
           <View className="flex-row justify-between pl-4 pt-12">
-
             <View >
               <Text className="text-3xl font-semibold text-white">Health Overview</Text>
             </View>
-
             <View className="ml-100  pr-12">
               <View className="flex-row space-x-4">
                 <View className="bg-white rounded-lg h-11 w-11 items-center justify-center">
@@ -255,10 +296,6 @@ const Home = () => {
               </View>
             </View>
           </View>
-
-
-
-
           <View className="flex-row">
             <View className="pl-4 ">
               <Text className="text-m text-white font-light">April, 15 2024</Text>
@@ -273,7 +310,7 @@ const Home = () => {
                   iconBgColor="bg-orange-200"
                   textBgColor="bg-orange-200"
                   title="FiO2"
-                  value="80"
+                  value={graphArr["FiO2"][graphArr["FiO2"].length-1]}
                   units="%"
                   remark="Normal"
                   onPress={handleCardPress}
@@ -283,7 +320,7 @@ const Home = () => {
                   iconBgColor="bg-rose-200"
                   textBgColor="bg-rose-200"
                   title="PIP"
-                  value="98"
+                  value={graphArr["PIP"][graphArr["PIP"].length-1]}
                   units="cmH20"
                   remark="Normal"
                   onPress={handleCardPress}
@@ -293,7 +330,7 @@ const Home = () => {
                   iconBgColor="bg-cyan-200"
                   textBgColor="bg-cyan-200"
                   title="VTe"
-                  value="102"
+                  value={graphArr["VTe"][graphArr["VTe"].length-1]}
                   units="mL"
                   remark="Normal"
                   onPress={handleCardPress}
@@ -303,7 +340,7 @@ const Home = () => {
                   iconBgColor="bg-purple-200"
                   textBgColor="bg-purple-200"
                   title="RR"
-                  value="15"
+                  value={graphArr["RR"][graphArr["RR"].length-1]}
                   units="bpm"
                   remark="Normal"
                   onPress={handleCardPress}
@@ -319,7 +356,7 @@ const Home = () => {
                   iconBgColor="bg-emerald-100"
                   textBgColor="bg-emerald-100"
                   title="SP"
-                  value="30"
+                  value={graphArr["SP"][graphArr["SP"].length-1]}
                   units="cmH2O"
                   remark="Normal"
                   onPress={handleCardPress}
@@ -329,8 +366,8 @@ const Home = () => {
                   iconBgColor="bg-yellow-100"
                   textBgColor="bg-yellow-100"
                   title="Tinsp"
-                  value="123"
-                  units="mmHg"
+                  value={graphArr["Tinsp"][graphArr["Tinsp"].length-1]}
+                  units="sec"
                   remark="Normal"
                   onPress={handleCardPress}
                 />
@@ -339,7 +376,7 @@ const Home = () => {
                   iconBgColor="bg-rose-200"
                   textBgColor="bg-rose-200"
                   title="PEEP"
-                  value="15"
+                  value={graphArr["PEEP"][graphArr["PEEP"].length-1]}
                   units="cmH20"
                   remark="Normal"
                   onPress={handleCardPress}
@@ -348,9 +385,9 @@ const Home = () => {
                   imageUri={require('../assets/hr-icon.png')}
                   iconBgColor="bg-sky-200"
                   textBgColor="bg-sky-200"
-                  title="HR"
-                  value="78"
-                  units="bpm"
+                  title="TF"
+                  value={graphArr["TF"][graphArr["TF"].length-1]}
+                  units="l/min"
                   remark="Normal"
                   onPress={handleCardPress}
                 />
@@ -373,20 +410,18 @@ const Home = () => {
                   </View>
 
                   <LineChart
-                    // data={{
-                    //   labels: ["0", "2", "4", "6", "May", "June", "July", "August", "September"],
-                    //   datasets: [
-                    //     {
-                    //       data: [Math.random()*100, Math.random()*100, Math.random()*100, Math.random()*100, Math.random()*100, Math.random()*100, Math.random()*100, Math.random()*100, Math.random()*100,]
-                    //     }
-                    //   ]
-                    // }}
-                    data={graphData}
-                    width={830}
+                    data={{
+                      labels: labels,
+                      datasets: [
+                        {
+                          data: graphArr[graphName]
+                        }
+                      ]
+                    }}
+                    width={780}
                     height={220}
-                    yAxisLabel="$"
-                    yAxisSuffix="k"
-                    yAxisInterval={1}
+                    yAxisSuffix="ml"
+                    yAxisInterval={5} // Set to 1 for every value, adjust as needed
                     chartConfig={{
                       backgroundColor: "#FFFFFF", // Change background color to white
                       backgroundGradientFrom: "#FFFFFF",
@@ -407,11 +442,7 @@ const Home = () => {
                       borderRadius: 16
                     }}
                   />
-
                 </View>
-
-
-
               </View>
             </View>
           </View>
@@ -511,8 +542,8 @@ const Home = () => {
                     source={require('../assets/dashboard/Scale.png')}
                   />
                   <View className="flex-row justify-around w-full mb-1">
-                      <Text>Height:</Text>
-                      <Text>183cm</Text>
+                    <Text>Height:</Text>
+                    <Text>183cm</Text>
                   </View>
                 </View>
               </View>
@@ -524,8 +555,8 @@ const Home = () => {
                     source={require('../assets/dashboard/Scale.png')}
                   />
                   <View className="flex-row justify-around w-full mb-1">
-                      <Text>Weight:</Text>
-                      <Text>72kg</Text>
+                    <Text>Weight:</Text>
+                    <Text>72kg</Text>
                   </View>
                 </View>
               </View>
